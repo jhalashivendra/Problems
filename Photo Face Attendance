@@ -1,0 +1,48 @@
+import os
+import cv2
+import numpy as np
+
+# Path to the dataset
+dataset_path = r"C:\Users\Shivendra Jhala\Downloads\Faces"
+
+# Function to read images and labels
+def read_images_and_labels(dataset_path):
+    images = []
+    labels = []
+    label_dict = {}
+    label = 0
+
+    for person_name in os.listdir(dataset_path):
+        person_path = os.path.join(dataset_path, person_name)
+        if os.path.isdir(person_path):
+            label_dict[label] = person_name
+            for img_name in os.listdir(person_path):
+                img_path = os.path.join(person_path, img_name)
+                img = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)
+                if img is not None:
+                    images.append(img)
+                    labels.append(label)
+            label += 1
+
+    return images, np.array(labels), label_dict
+
+# Read the images and labels
+images, labels, label_dict = read_images_and_labels(dataset_path)
+
+# Train the face recognizer
+face_recognizer = cv2.face.LBPHFaceRecognizer_create()
+face_recognizer.train(images, labels)
+
+# Function to recognize face
+def recognize_face(reference_image_path):
+    reference_img = cv2.imread(reference_image_path, cv2.IMREAD_GRAYSCALE)
+    if reference_img is None:
+        raise ValueError(f"Could not read image at {reference_image_path}")
+    
+    label, confidence = face_recognizer.predict(reference_img)
+    return label_dict[label], confidence
+
+# Test with a reference image
+reference_image_path = r"C:\Users\Shivendra Jhala\Downloads\norman.pgm"
+person_name, confidence = recognize_face(reference_image_path)
+print(f"Matched with: {person_name} (Confidence: {confidence})")
